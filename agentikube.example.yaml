@@ -1,0 +1,98 @@
+# agentikube configuration
+# Copy this file to agentikube.yaml and fill in your values.
+
+# Kubernetes namespace for all sandbox resources
+namespace: sandboxes
+
+# Compute configuration for sandbox nodes
+compute:
+  # karpenter or fargate
+  type: karpenter
+
+  # EC2 instance types for Karpenter-managed nodes
+  instanceTypes:
+    - m6i.xlarge
+    - m5.xlarge
+    - r6i.xlarge
+
+  # Capacity types: spot-first for cost savings
+  capacityTypes: [spot, on-demand]
+
+  # Cluster-wide resource limits
+  maxCpu: 2000
+  maxMemory: 8000Gi
+
+  # Enable aggressive node bin-packing
+  consolidation: true
+
+  # Fargate selectors (only used when type: fargate)
+  # fargateSelectors:
+  #   - namespace: sandboxes
+
+# Persistent storage configuration
+storage:
+  # Storage backend (efs is the only option for now)
+  type: efs
+
+  # Your EFS filesystem ID
+  filesystemId: fs-08f7991b1c7f3ded8
+
+  # Root directory for sandbox access points
+  basePath: /sandboxes
+
+  # UID/GID for created access points
+  uid: 1000
+  gid: 1000
+
+  # Retain keeps data when a sandbox is deleted; Delete removes it
+  reclaimPolicy: Retain
+
+# Sandbox pod configuration
+sandbox:
+  # Container image for sandboxes
+  image: openclaw:2026.2.2
+
+  # Ports exposed by the sandbox container
+  ports: [18789, 2222, 3000, 5173, 8080]
+
+  # Where EFS storage mounts inside the container
+  mountPath: /home/node/.openclaw
+
+  # Container resource requests and limits
+  resources:
+    requests:
+      cpu: 50m
+      memory: 512Mi
+    limits:
+      cpu: "2"
+      memory: 4Gi
+
+  # Extra environment variables injected into every sandbox
+  env:
+    LLM_GATEWAY_URL: http://llm-gateway.sandboxes.svc.cluster.local
+
+  # Container security context
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 1000
+    runAsNonRoot: true
+
+  # Health check probes
+  probes:
+    # TCP probe target port
+    port: 18789
+    # Startup grace: 30 * 10s = 5 min
+    startupFailureThreshold: 30
+
+  # Warm pool pre-provisions sandbox pods for fast allocation
+  warmPool:
+    enabled: true
+    size: 5
+    ttlMinutes: 120
+
+  # Network policy for sandbox pods
+  networkPolicy:
+    # Agents need outbound access for LLM APIs, npm, etc.
+    egressAllowAll: true
+    # Ports accessible from within the cluster
+    ingressPorts: [18789, 2222, 3000, 5173, 8080]

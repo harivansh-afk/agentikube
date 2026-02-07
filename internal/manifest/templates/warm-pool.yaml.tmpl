@@ -1,0 +1,10 @@
+apiVersion: agentsandbox.dev/v1
+kind: SandboxWarmPool
+metadata:
+  name: sandbox-warm-pool
+  namespace: {{ .Namespace }}
+spec:
+  templateRef:
+    name: sandbox-template
+  replicas: {{ .Sandbox.WarmPool.Size }}
+  ttlMinutes: {{ .Sandbox.WarmPool.TTLMinutes }}

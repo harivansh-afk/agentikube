@@ -1,0 +1,66 @@
+apiVersion: agentsandbox.dev/v1
+kind: SandboxTemplate
+metadata:
+  name: sandbox-template
+  namespace: {{ .Namespace }}
+spec:
+  template:
+    spec:
+      containers:
+        - name: sandbox
+          image: {{ .Sandbox.Image }}
+          ports:
+          {{- range .Sandbox.Ports }}
+            - containerPort: {{ . }}
+          {{- end }}
+          resources:
+            requests:
+              cpu: {{ .Sandbox.Resources.Requests.CPU }}
+              memory: {{ .Sandbox.Resources.Requests.Memory }}
+            limits:
+              cpu: {{ .Sandbox.Resources.Limits.CPU }}
+              memory: {{ .Sandbox.Resources.Limits.Memory }}
+          securityContext:
+            runAsUser: {{ .Sandbox.SecurityContext.RunAsUser }}
+            runAsGroup: {{ .Sandbox.SecurityContext.RunAsGroup }}
+            runAsNonRoot: {{ .Sandbox.SecurityContext.RunAsNonRoot }}
+          env:
+          {{- range $key, $value := .Sandbox.Env }}
+            - name: {{ $key }}
+              value: "{{ $value }}"
+          {{- end }}
+          startupProbe:
+            tcpSocket:
+              port: {{ .Sandbox.Probes.Port }}
+            failureThreshold: {{ .Sandbox.Probes.StartupFailureThreshold }}
+            periodSeconds: 10
+          readinessProbe:
+            tcpSocket:
+              port: {{ .Sandbox.Probes.Port }}
+            periodSeconds: 10
+          volumeMounts:
+            - name: workspace
+              mountPath: {{ .Sandbox.MountPath }}
+  volumeClaimTemplates:
+    - metadata:
+        name: workspace
+      spec:
+        accessModes:
+          - ReadWriteMany
+        storageClassName: efs-sandbox
+        resources:
+          requests:
+            storage: "10Gi"
+  networkPolicy:
+    egress:
+    {{- if .Sandbox.NetworkPolicy.EgressAllowAll }}
+      - to:
+          - ipBlock:
+              cidr: 0.0.0.0/0
+    {{- end }}
+    ingress:
+    {{- range .Sandbox.NetworkPolicy.IngressPorts }}
+      - ports:
+          - port: {{ . }}
+            protocol: TCP
+    {{- end }}

@@ -1,0 +1,14 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: efs-sandbox
+provisioner: efs.csi.aws.com
+parameters:
+  provisioningMode: efs-ap
+  fileSystemId: {{ .Storage.FilesystemID }}
+  directoryPerms: "755"
+  uid: "{{ .Storage.UID }}"
+  gid: "{{ .Storage.GID }}"
+  basePath: {{ .Storage.BasePath }}
+reclaimPolicy: {{ .Storage.ReclaimPolicy }}
+volumeBindingMode: Immediate
