@@ -1,10 +1,10 @@
 # agentikube
 
-[![GitHub Release](https://img.shields.io/github/v/release/rathi/agentikube)](https://github.com/rathi/agentikube/releases)
-[![GitHub Downloads (All Assets)](https://img.shields.io/github/downloads/rathi/agentikube/total)](https://github.com/rathi/agentikube/releases)
-[![GitHub License](https://img.shields.io/github/license/rathi/agentikube)](https://github.com/rathi/agentikube)
-[![Go Version](https://img.shields.io/github/go-mod/go-version/rathi/agentikube)](https://github.com/rathi/agentikube/blob/main/go.mod)
-[![Repo Size](https://img.shields.io/github/repo-size/rathi/agentikube)](https://github.com/rathi/agentikube)
+[![GitHub Release](https://img.shields.io/github/v/release/harivansh-afk/agentikube)](https://github.com/harivansh-afk/agentikube/releases)
+[![GitHub Downloads (All Assets)](https://img.shields.io/github/downloads/harivansh-afk/agentikube/total)](https://github.com/harivansh-afk/agentikube/releases)
+[![GitHub License](https://img.shields.io/github/license/harivansh-afk/agentikube)](https://github.com/harivansh-afk/agentikube)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/harivansh-afk/agentikube)](https://github.com/harivansh-afk/agentikube/blob/main/go.mod)
+[![Repo Size](https://img.shields.io/github/repo-size/harivansh-afk/agentikube)](https://github.com/harivansh-afk/agentikube)
 
 This repo is a small Go CLI for running isolated agent sandboxes on Kubernetes.
 
