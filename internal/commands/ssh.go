@@ -7,7 +7,6 @@ import (
 	"github.com/rathi/agentikube/internal/kube"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 func NewSSHCmd() *cobra.Command {
@@ -33,13 +32,7 @@ func NewSSHCmd() *cobra.Command {
 			ns := cfg.Namespace
 			name := "sandbox-" + handle
 
-			claimGVR := schema.GroupVersionResource{
-				Group:    "agentsandbox.dev",
-				Version:  "v1",
-				Resource: "sandboxclaims",
-			}
-
-			claim, err := client.Dynamic().Resource(claimGVR).Namespace(ns).Get(ctx, name, metav1.GetOptions{})
+			claim, err := client.Dynamic().Resource(sandboxClaimGVR).Namespace(ns).Get(ctx, name, metav1.GetOptions{})
 			if err != nil {
 				return fmt.Errorf("getting SandboxClaim %q: %w", name, err)
 			}

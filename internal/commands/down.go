@@ -7,7 +7,6 @@ import (
 	"github.com/rathi/agentikube/internal/kube"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 func NewDownCmd() *cobra.Command {
@@ -30,26 +29,14 @@ func NewDownCmd() *cobra.Command {
 
 			ns := cfg.Namespace
 
-			warmPoolGVR := schema.GroupVersionResource{
-				Group:    "agentsandbox.dev",
-				Version:  "v1",
-				Resource: "sandboxwarmpools",
-			}
-
-			templateGVR := schema.GroupVersionResource{
-				Group:    "agentsandbox.dev",
-				Version:  "v1",
-				Resource: "sandboxtemplates",
-			}
-
-			err = client.Dynamic().Resource(warmPoolGVR).Namespace(ns).Delete(ctx, "sandbox-warm-pool", metav1.DeleteOptions{})
+			err = client.Dynamic().Resource(sandboxWarmPoolGVR).Namespace(ns).Delete(ctx, "sandbox-warm-pool", metav1.DeleteOptions{})
 			if err != nil {
 				fmt.Printf("[warn] could not delete SandboxWarmPool: %v\n", err)
 			} else {
 				fmt.Println("[ok] SandboxWarmPool deleted")
 			}
 
-			err = client.Dynamic().Resource(templateGVR).Namespace(ns).Delete(ctx, "sandbox-template", metav1.DeleteOptions{})
+			err = client.Dynamic().Resource(sandboxTemplateGVR).Namespace(ns).Delete(ctx, "sandbox-template", metav1.DeleteOptions{})
 			if err != nil {
 				fmt.Printf("[warn] could not delete SandboxTemplate: %v\n", err)
 			} else {

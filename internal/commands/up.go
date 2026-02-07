@@ -46,7 +46,7 @@ func NewUpCmd() *cobra.Command {
 
 			if cfg.Sandbox.WarmPool.Enabled {
 				fmt.Println("waiting for warm pool to become ready...")
-				if err := client.WaitForReady(ctx, cfg.Namespace, "sandboxwarmpools", "sandbox-warm-pool"); err != nil {
+				if err := client.WaitForReady(ctx, cfg.Namespace, sandboxWarmPoolGVR, "sandbox-warm-pool"); err != nil {
 					return fmt.Errorf("waiting for warm pool: %w", err)
 				}
 				fmt.Println("[ok] warm pool ready")

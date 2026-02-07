@@ -10,34 +10,27 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 )
 
-// WaitForReady watches a resource in the agentsandbox.dev/v1 group until its
-// Ready condition becomes True or the context is cancelled/times out.
-// The resource parameter is the plural resource name (e.g. "sandboxclaims", "sandboxwarmpools").
-func (c *Client) WaitForReady(ctx context.Context, namespace, resource, name string) error {
-	gvr := schema.GroupVersionResource{
-		Group:    "agentsandbox.dev",
-		Version:  "v1",
-		Resource: resource,
-	}
-
+// WaitForReady watches a resource until its Ready condition becomes True
+// or the context is cancelled/times out.
+func (c *Client) WaitForReady(ctx context.Context, namespace string, gvr schema.GroupVersionResource, name string) error {
 	watcher, err := c.Dynamic().Resource(gvr).Namespace(namespace).Watch(ctx, metav1.ListOptions{
 		FieldSelector: fmt.Sprintf("metadata.name=%s", name),
 	})
 	if err != nil {
-		return fmt.Errorf("watching %s %s/%s: %w", resource, namespace, name, err)
+		return fmt.Errorf("watching %s %s/%s: %w", gvr.Resource, namespace, name, err)
 	}
 	defer watcher.Stop()
 
 	for {
 		select {
 		case <-ctx.Done():
-			return fmt.Errorf("timed out waiting for %s %s/%s to become ready", resource, namespace, name)
+			return fmt.Errorf("timed out waiting for %s %s/%s to become ready", gvr.Resource, namespace, name)
 		case event, ok := <-watcher.ResultChan():
 			if !ok {
-				return fmt.Errorf("watch channel closed for %s %s/%s", resource, namespace, name)
+				return fmt.Errorf("watch channel closed for %s %s/%s", gvr.Resource, namespace, name)
 			}
 			if event.Type == watch.Error {
-				return fmt.Errorf("watch error for %s %s/%s", resource, namespace, name)
+				return fmt.Errorf("watch error for %s %s/%s", gvr.Resource, namespace, name)
 			}
 
 			obj, ok := event.Object.(*unstructured.Unstructured)

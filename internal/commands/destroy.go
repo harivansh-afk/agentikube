@@ -9,9 +9,8 @@ import (
 
 	"github.com/rathi/agentikube/internal/kube"
 	"github.com/spf13/cobra"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func NewDestroyCmd() *cobra.Command {
@@ -50,17 +49,11 @@ func NewDestroyCmd() *cobra.Command {
 			ns := cfg.Namespace
 			name := "sandbox-" + handle
 
-			claimGVR := schema.GroupVersionResource{
-				Group:    "agentsandbox.dev",
-				Version:  "v1",
-				Resource: "sandboxclaims",
-			}
-
-			secretGVR := schema.GroupVersionResource{Group: "", Version: "v1", Resource: "secrets"}
-			pvcGVR := schema.GroupVersionResource{Group: "", Version: "v1", Resource: "persistentvolumeclaims"}
+			secretGVR := coreGVR("secrets")
+			pvcGVR := coreGVR("persistentvolumeclaims")
 
 			// Delete SandboxClaim
-			err = client.Dynamic().Resource(claimGVR).Namespace(ns).Delete(ctx, name, metav1.DeleteOptions{})
+			err = client.Dynamic().Resource(sandboxClaimGVR).Namespace(ns).Delete(ctx, name, metav1.DeleteOptions{})
 			if err != nil {
 				return fmt.Errorf("deleting SandboxClaim %q: %w", name, err)
 			}

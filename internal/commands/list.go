@@ -10,7 +10,6 @@ import (
 	"github.com/rathi/agentikube/internal/kube"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 func NewListCmd() *cobra.Command {
@@ -31,13 +30,7 @@ func NewListCmd() *cobra.Command {
 				return fmt.Errorf("connecting to cluster: %w", err)
 			}
 
-			claimGVR := schema.GroupVersionResource{
-				Group:    "agentsandbox.dev",
-				Version:  "v1",
-				Resource: "sandboxclaims",
-			}
-
-			list, err := client.Dynamic().Resource(claimGVR).Namespace(cfg.Namespace).List(ctx, metav1.ListOptions{})
+			list, err := client.Dynamic().Resource(sandboxClaimGVR).Namespace(cfg.Namespace).List(ctx, metav1.ListOptions{})
 			if err != nil {
 				return fmt.Errorf("listing SandboxClaims: %w", err)
 			}
@@ -114,7 +107,7 @@ func extractPodName(obj map[string]interface{}) string {
 	if ok {
 		annotations, ok := metadata["annotations"].(map[string]interface{})
 		if ok {
-			if podName, ok := annotations["agentsandbox.dev/pod-name"].(string); ok {
+			if podName, ok := annotations["agents.x-k8s.io/pod-name"].(string); ok {
 				return podName
 			}
 		}

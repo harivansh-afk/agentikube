@@ -9,7 +9,6 @@ import (
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 func NewCreateCmd() *cobra.Command {
@@ -55,7 +54,7 @@ func NewCreateCmd() *cobra.Command {
 				},
 			}
 
-			secretGVR := schema.GroupVersionResource{Group: "", Version: "v1", Resource: "secrets"}
+			secretGVR := coreGVR("secrets")
 			_, err = client.Dynamic().Resource(secretGVR).Namespace(ns).Create(ctx, secret, metav1.CreateOptions{})
 			if err != nil {
 				return fmt.Errorf("creating secret %q: %w", name, err)
@@ -65,7 +64,7 @@ func NewCreateCmd() *cobra.Command {
 			// Create the SandboxClaim
 			claim := &unstructured.Unstructured{
 				Object: map[string]interface{}{
-					"apiVersion": "agentsandbox.dev/v1",
+					"apiVersion": "extensions.agents.x-k8s.io/v1alpha1",
 					"kind":       "SandboxClaim",
 					"metadata": map[string]interface{}{
 						"name":      name,
@@ -82,12 +81,7 @@ func NewCreateCmd() *cobra.Command {
 				},
 			}
 
-			claimGVR := schema.GroupVersionResource{
-				Group:    "agentsandbox.dev",
-				Version:  "v1",
-				Resource: "sandboxclaims",
-			}
-			_, err = client.Dynamic().Resource(claimGVR).Namespace(ns).Create(ctx, claim, metav1.CreateOptions{})
+			_, err = client.Dynamic().Resource(sandboxClaimGVR).Namespace(ns).Create(ctx, claim, metav1.CreateOptions{})
 			if err != nil {
 				return fmt.Errorf("creating SandboxClaim %q: %w", name, err)
 			}
@@ -98,7 +92,7 @@ func NewCreateCmd() *cobra.Command {
 			waitCtx, cancel := context.WithTimeout(ctx, 3*time.Minute)
 			defer cancel()
 
-			if err := client.WaitForReady(waitCtx, ns, "sandboxclaims", name); err != nil {
+			if err := client.WaitForReady(waitCtx, ns, sandboxClaimGVR, name); err != nil {
 				return fmt.Errorf("waiting for sandbox: %w", err)
 			}
 

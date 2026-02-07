@@ -7,7 +7,6 @@ import (
 	"github.com/rathi/agentikube/internal/kube"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 func NewStatusCmd() *cobra.Command {
@@ -31,13 +30,7 @@ func NewStatusCmd() *cobra.Command {
 			ns := cfg.Namespace
 
 			// Warm pool status
-			warmPoolGVR := schema.GroupVersionResource{
-				Group:    "agentsandbox.dev",
-				Version:  "v1",
-				Resource: "sandboxwarmpools",
-			}
-
-			wp, err := client.Dynamic().Resource(warmPoolGVR).Namespace(ns).Get(ctx, "sandbox-warm-pool", metav1.GetOptions{})
+			wp, err := client.Dynamic().Resource(sandboxWarmPoolGVR).Namespace(ns).Get(ctx, "sandbox-warm-pool", metav1.GetOptions{})
 			if err != nil {
 				fmt.Printf("warm pool: not found (%v)\n", err)
 			} else {
@@ -55,13 +48,7 @@ func NewStatusCmd() *cobra.Command {
 			}
 
 			// Sandbox count
-			claimGVR := schema.GroupVersionResource{
-				Group:    "agentsandbox.dev",
-				Version:  "v1",
-				Resource: "sandboxclaims",
-			}
-
-			claims, err := client.Dynamic().Resource(claimGVR).Namespace(ns).List(ctx, metav1.ListOptions{})
+			claims, err := client.Dynamic().Resource(sandboxClaimGVR).Namespace(ns).List(ctx, metav1.ListOptions{})
 			if err != nil {
 				fmt.Printf("\nsandboxes: error listing (%v)\n", err)
 			} else {
