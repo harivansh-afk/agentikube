@@ -11,7 +11,14 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const crdInstallURL = "https://raw.githubusercontent.com/agent-sandbox/agent-sandbox/main/deploy/install.yaml"
+const crdBaseURL = "https://raw.githubusercontent.com/kubernetes-sigs/agent-sandbox/main/k8s/crds/"
+
+var crdFiles = []string{
+	"agents.x-k8s.io_sandboxes.yaml",
+	"extensions.agents.x-k8s.io_sandboxclaims.yaml",
+	"extensions.agents.x-k8s.io_sandboxtemplates.yaml",
+	"extensions.agents.x-k8s.io_sandboxwarmpools.yaml",
+}
 
 func NewInitCmd() *cobra.Command {
 	cmd := &cobra.Command{
@@ -35,9 +42,12 @@ func NewInitCmd() *cobra.Command {
 
 			// Apply agent-sandbox CRDs
 			fmt.Println("applying agent-sandbox CRDs...")
-			out, err := exec.CommandContext(ctx, "kubectl", "apply", "-f", crdInstallURL).CombinedOutput()
-			if err != nil {
-				return fmt.Errorf("applying CRDs: %s: %w", strings.TrimSpace(string(out)), err)
+			for _, f := range crdFiles {
+				url := crdBaseURL + f
+				out, err := exec.CommandContext(ctx, "kubectl", "apply", "-f", url).CombinedOutput()
+				if err != nil {
+					return fmt.Errorf("applying CRD %s: %s: %w", f, strings.TrimSpace(string(out)), err)
+				}
 			}
 			fmt.Println("[ok] agent-sandbox CRDs applied")
 
