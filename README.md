@@ -5,6 +5,8 @@
 
 A small Go CLI that spins up isolated agent sandboxes on Kubernetes. Built for AWS setups (EFS + optional Karpenter).
 
+<img width="672" height="520" alt="image" src="https://github.com/user-attachments/assets/99c75ac1-5f99-4bf3-b725-fe74829f85b0" />
+
 ## What it does
 
 - **`init`** - Installs CRDs, checks prerequisites, ensures your namespace exists
