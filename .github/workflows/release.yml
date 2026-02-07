@@ -1,0 +1,95 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+    tags-ignore:
+      - "v*"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Compute next version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          latest_tag="$(git tag --list 'v*' --sort=-v:refname | head -n 1)"
+          if [ -z "$latest_tag" ]; then
+            next_tag="v0.1.0"
+          else
+            base="${latest_tag#v}"
+            IFS='.' read -r major minor patch <<< "$base"
+            patch=$((patch + 1))
+            next_tag="v${major}.${minor}.${patch}"
+          fi
+          echo "next_tag=$next_tag" >> "$GITHUB_OUTPUT"
+          echo "version=${next_tag#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Commit VERSION
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "${{ steps.version.outputs.version }}" > VERSION
+          if git diff --quiet VERSION; then
+            echo "VERSION unchanged"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add VERSION
+            git commit -m "chore(release): ${{ steps.version.outputs.next_tag }} [skip ci]"
+            git push origin HEAD:main
+          fi
+
+      - name: Create tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --tags
+          if git rev-parse "${{ steps.version.outputs.next_tag }}" >/dev/null 2>&1; then
+            echo "Tag already exists: ${{ steps.version.outputs.next_tag }}"
+          else
+            git tag "${{ steps.version.outputs.next_tag }}"
+            git push origin "${{ steps.version.outputs.next_tag }}"
+          fi
+
+      - name: Build release binaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          version="${{ steps.version.outputs.next_tag }}"
+
+          GOOS=linux GOARCH=amd64 go build -ldflags "-X main.version=${version}" -o "dist/agentikube_${version}_linux_amd64" ./cmd/agentikube
+          GOOS=linux GOARCH=arm64 go build -ldflags "-X main.version=${version}" -o "dist/agentikube_${version}_linux_arm64" ./cmd/agentikube
+          GOOS=darwin GOARCH=amd64 go build -ldflags "-X main.version=${version}" -o "dist/agentikube_${version}_darwin_amd64" ./cmd/agentikube
+          GOOS=darwin GOARCH=arm64 go build -ldflags "-X main.version=${version}" -o "dist/agentikube_${version}_darwin_arm64" ./cmd/agentikube
+          GOOS=windows GOARCH=amd64 go build -ldflags "-X main.version=${version}" -o "dist/agentikube_${version}_windows_amd64.exe" ./cmd/agentikube
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.next_tag }}
+          name: ${{ steps.version.outputs.next_tag }}
+          generate_release_notes: true
+          files: dist/*

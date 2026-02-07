@@ -4,7 +4,9 @@
 [![GitHub Downloads (All Assets)](https://img.shields.io/github/downloads/harivansh-afk/agentikube/total)](https://github.com/harivansh-afk/agentikube/releases)
 [![GitHub License](https://img.shields.io/github/license/harivansh-afk/agentikube)](https://github.com/harivansh-afk/agentikube)
 [![Go Version](https://img.shields.io/github/go-mod/go-version/harivansh-afk/agentikube)](https://github.com/harivansh-afk/agentikube/blob/main/go.mod)
-[![Repo Size](https://img.shields.io/github/repo-size/harivansh-afk/agentikube)](https://github.com/harivansh-afk/agentikube)
+[![Code Size](https://img.shields.io/github/languages/code-size/harivansh-afk/agentikube)](https://github.com/harivansh-afk/agentikube)
+[![CI](https://github.com/harivansh-afk/agentikube/actions/workflows/ci.yml/badge.svg)](https://github.com/harivansh-afk/agentikube/actions/workflows/ci.yml)
+[![Release](https://github.com/harivansh-afk/agentikube/actions/workflows/release.yml/badge.svg)](https://github.com/harivansh-afk/agentikube/actions/workflows/release.yml)
 
 This repo is a small Go CLI for running isolated agent sandboxes on Kubernetes.
 
@@ -131,6 +133,36 @@ agentikube create demo --provider openai --api-key <key>
 agentikube list
 agentikube ssh demo
 ```
+
+## Test CLI Locally
+
+Use this exact flow to verify the CLI on your machine:
+
+```bash
+# 1) Build + tests
+mkdir -p .cache/go-build .cache/go-mod
+GOCACHE=$(pwd)/.cache/go-build GOMODCACHE=$(pwd)/.cache/go-mod go build ./...
+GOCACHE=$(pwd)/.cache/go-build GOMODCACHE=$(pwd)/.cache/go-mod go test ./...
+
+# 2) Root help + command help
+GOCACHE=$(pwd)/.cache/go-build GOMODCACHE=$(pwd)/.cache/go-mod go run ./cmd/agentikube --help
+for c in init up create list ssh down destroy status; do
+  GOCACHE=$(pwd)/.cache/go-build GOMODCACHE=$(pwd)/.cache/go-mod go run ./cmd/agentikube "$c" --help >/dev/null
+done
+
+# 3) Manifest generation smoke test
+./agentikube up --dry-run --config agentikube.example.yaml
+```
+
+If those pass, the CLI wiring + config + templating path is working locally.
+
+## CI And Auto Release
+
+This repo now has two GitHub Actions workflows:
+- `.github/workflows/ci.yml`  
+  Runs `go build ./...` and `go test ./...` on PRs and non-main branch pushes.
+- `.github/workflows/release.yml`  
+  Runs on push to `main`, auto-bumps patch version (`vX.Y.Z`), writes `VERSION`, creates/pushes tag, builds multi-platform binaries, and creates a GitHub Release with artifacts.
 
 ## Notes / Current Limits
 
