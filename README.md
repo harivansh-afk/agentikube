@@ -129,6 +129,15 @@ agentikube list
 agentikube ssh demo
 ```
 
+4. (Recommended) Install [k9s](https://k9scli.io/) for managing Kubernetes resources:
+
+```bash
+brew install derailed/k9s/k9s
+k9s --context <your-cluster-context>
+```
+
+Use `:crds`, `:sandboxes`, `:sandboxtemplates`, etc. to browse agent-sandbox resources.
+
 ## Test CLI Locally
 
 Use this exact flow to verify the CLI on your machine:
