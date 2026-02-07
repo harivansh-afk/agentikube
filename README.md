@@ -1,176 +1,78 @@
 # agentikube
+
 [![Go Version](https://img.shields.io/github/go-mod/go-version/harivansh-afk/agentikube)](https://github.com/harivansh-afk/agentikube/blob/main/go.mod)
-[![Code Size](https://img.shields.io/github/languages/code-size/harivansh-afk/agentikube)](https://github.com/harivansh-afk/agentikube)
-[![Release](https://github.com/harivansh-afk/agentikube/actions/workflows/release.yml/badge.svg)](https://github.com/harivansh-afk/agentikube/actions/workflows/release.yml)
+[![Release](https://img.shields.io/github/v/release/harivansh-afk/agentikube)](https://github.com/harivansh-afk/agentikube/releases/latest)
 
-This repo is a small Go CLI for running isolated agent sandboxes on Kubernetes.
+A small Go CLI that spins up isolated agent sandboxes on Kubernetes. Built for AWS setups (EFS + optional Karpenter).
 
-The main job of `agentikube` is:
-- set up shared sandbox infra (`init`, `up`)
-- create one sandbox per user/handle (`create`)
-- let you inspect and access sandboxes (`list`, `status`, `ssh`)
-- clean up sandboxes or shared infra (`destroy`, `down`)
+## What it does
 
-It is built for AWS-style setups (EFS + optional Karpenter).
+- **`init`** - Installs CRDs, checks prerequisites, ensures your namespace exists
+- **`up`** - Renders and applies Kubernetes manifests from templates (`--dry-run` to preview)
+- **`create <handle>`** - Spins up a sandbox for a user with provider credentials
+- **`list`** - Shows all sandboxes with status, age, and pod name
+- **`status`** - Warm pool numbers, sandbox count, Karpenter node count
+- **`ssh <handle>`** - Drops you into a sandbox pod shell
+- **`destroy <handle>`** - Tears down a single sandbox
+- **`down`** - Removes shared infra but keeps existing user sandboxes
 
-## What This Stands Up
-
-When you run `up`, it renders and applies Kubernetes manifests from templates.
-
-Core resources:
-- `Namespace`
-- `StorageClass` (`efs-sandbox`, provisioner `efs.csi.aws.com`)
-- `SandboxTemplate` (`sandbox-template`)
-
-Optional resources:
-- `SandboxWarmPool` (if `sandbox.warmPool.enabled: true`)
-- `NodePool` + `EC2NodeClass` (if `compute.type: karpenter`)
-
-When you run `create <handle>`, it creates:
-- `Secret` (`sandbox-<handle>`) with provider credentials
-- `SandboxClaim` (`sandbox-<handle>`) that points to `sandbox-template`
-- PVC from template (`workspace` volume claim template)
-
-## Filesystem
-
-```text
-cmd/agentikube/main.go         # CLI entrypoint + subcommand wiring
-internal/config/               # config structs + validation/defaults
-internal/manifest/             # template rendering
-internal/manifest/templates/   # Kubernetes YAML templates
-internal/kube/                 # kube client, apply, wait, exec helpers
-internal/commands/             # command implementations
-agentikube.example.yaml        # example config you copy to agentikube.yaml
-Makefile                       # build/install/fmt/vet targets
-```
-
-## How It Works (Simple Flow)
-
-```mermaid
-flowchart TD
-    A[agentikube command] --> B[Load agentikube.yaml]
-    B --> C[Validate config + apply defaults]
-    C --> D{Command}
-    D -->|init| E[Install CRDs + check prereqs + ensure namespace]
-    D -->|up| F[Render templates -> server-side apply]
-    D -->|create| G[Create Secret + SandboxClaim]
-    G --> H[Watch SandboxClaim until Ready]
-    D -->|list/status| I[Read SandboxClaim/WarmPool state]
-    D -->|ssh| J[Resolve pod name -> kubectl exec -it]
-    D -->|destroy| K[Delete SandboxClaim + Secret + best-effort PVC]
-    D -->|down| L[Delete warm pool + template, keep user sandboxes]
-```
-
-## Resource Diagram (Abilities + Resources)
-
-```mermaid
-flowchart LR
-    CLI[agentikube CLI] --> K8S[Kubernetes API]
-    CLI --> KUBECTL[kubectl binary]
-
-    K8S --> NS[Namespace]
-    K8S --> SC[StorageClass efs-sandbox]
-    K8S --> ST[SandboxTemplate]
-    K8S --> WP[SandboxWarmPool]
-    K8S --> NP[NodePool]
-    K8S --> ENC[EC2NodeClass]
-
-    K8S --> CLAIM[SandboxClaim per user]
-    K8S --> SECRET[Secret per user]
-    CLAIM --> POD[Sandbox Pod]
-    POD --> PVC[Workspace PVC]
-    PVC --> SC
-    SC --> EFS[(AWS EFS)]
-
-    NP --> EC2[(EC2 nodes via Karpenter)]
-    ENC --> EC2
-```
-
-## Commands
-
-- `agentikube init`  
-  Installs agent-sandbox CRDs, checks for EFS CSI/Karpenter, and ensures namespace exists.
-- `agentikube up [--dry-run]`  
-  Renders manifests and applies them with server-side apply. `--dry-run` prints YAML only.
-- `agentikube create <handle> --provider <name> --api-key <key>`  
-  Creates per-user Secret + SandboxClaim and waits (up to 3 minutes) for Ready.
-- `agentikube list`  
-  Shows handle, status, age, and pod name for all sandbox claims.
-- `agentikube ssh <handle>`  
-  Finds the sandbox pod and opens `/bin/sh` using `kubectl exec -it`.
-- `agentikube destroy <handle> [--yes]`  
-  Deletes SandboxClaim + Secret + best-effort PVC for that handle.
-- `agentikube down`  
-  Deletes shared warm pool/template infra but preserves existing user sandboxes.
-- `agentikube status`  
-  Prints warm pool numbers, sandbox count, and Karpenter node count (if enabled).
-
-## Quick Start
-
-1. Copy config:
+## Quick start
 
 ```bash
+# 1. Copy and fill in your config
 cp agentikube.example.yaml agentikube.yaml
-```
+# Edit: namespace, EFS filesystem ID, sandbox image, compute settings
 
-2. Fill your values in `agentikube.yaml`:
-- namespace
-- EFS filesystem ID / base path
-- sandbox image
-- compute settings
-
-3. Run:
-
-```bash
+# 2. Set things up
 agentikube init
 agentikube up
+
+# 3. Create a sandbox and jump in
 agentikube create demo --provider openai --api-key <key>
 agentikube list
 agentikube ssh demo
 ```
 
-4. (Recommended) Install [k9s](https://k9scli.io/) for managing Kubernetes resources:
+## What gets created
 
-```bash
-brew install derailed/k9s/k9s
-k9s --context <your-cluster-context>
+Running `up` applies these to your cluster:
+
+- Namespace, StorageClass (`efs-sandbox`), SandboxTemplate
+- Optionally: SandboxWarmPool, NodePool + EC2NodeClass (Karpenter)
+
+Running `create <handle>` adds:
+
+- A Secret and SandboxClaim per user
+- A workspace PVC backed by EFS
+
+## Project layout
+
+```
+cmd/agentikube/main.go         # entrypoint
+internal/config/               # config structs + validation
+internal/manifest/             # template rendering
+internal/manifest/templates/   # k8s YAML templates
+internal/kube/                 # kube client helpers
+internal/commands/             # command implementations
+agentikube.example.yaml        # example config
+Makefile                       # build/install/fmt/vet
 ```
 
-Use `:crds`, `:sandboxes`, `:sandboxtemplates`, etc. to browse agent-sandbox resources.
-
-## Test CLI Locally
-
-Use this exact flow to verify the CLI on your machine:
+## Build and test locally
 
 ```bash
-# 1) Build + tests
-mkdir -p .cache/go-build .cache/go-mod
-GOCACHE=$(pwd)/.cache/go-build GOMODCACHE=$(pwd)/.cache/go-mod go build ./...
-GOCACHE=$(pwd)/.cache/go-build GOMODCACHE=$(pwd)/.cache/go-mod go test ./...
+go build ./...
+go test ./...
+go run ./cmd/agentikube --help
 
-# 2) Root help + command help
-GOCACHE=$(pwd)/.cache/go-build GOMODCACHE=$(pwd)/.cache/go-mod go run ./cmd/agentikube --help
-for c in init up create list ssh down destroy status; do
-  GOCACHE=$(pwd)/.cache/go-build GOMODCACHE=$(pwd)/.cache/go-mod go run ./cmd/agentikube "$c" --help >/dev/null
-done
-
-# 3) Manifest generation smoke test
+# Smoke test manifest generation
 ./agentikube up --dry-run --config agentikube.example.yaml
 ```
 
-If those pass, the CLI wiring + config + templating path is working locally.
+## Good to know
 
-## CI And Auto Release
-
-This repo now has two GitHub Actions workflows:
-- `.github/workflows/ci.yml`  
-  Runs `go build ./...` and `go test ./...` on PRs and non-main branch pushes.
-- `.github/workflows/release.yml`  
-  Runs on push to `main`, auto-bumps patch version (`vX.Y.Z`), writes `VERSION`, creates/pushes tag, builds multi-platform binaries, and creates a GitHub Release with artifacts.
-
-## Notes / Current Limits
-
-- `storage.type` currently must be `efs`.
-- `kubectl` must be installed (used by `init` and `ssh`).
-- `compute.type: fargate` is validated, but this repo currently renders templates for the Karpenter path.
-- No Go tests are present yet (`go test ./...` reports no test files).
+- `storage.type` is `efs` only for now
+- `kubectl` needs to be installed (used by `init` and `ssh`)
+- Fargate is validated in config but templates only cover the Karpenter path so far
+- No Go tests written yet - `go test` passes but reports no test files
+- [k9s](https://k9scli.io/) is great for browsing sandbox resources (`brew install derailed/k9s/k9s`)
