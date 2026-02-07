@@ -1,11 +1,6 @@
 # agentikube
-
-[![GitHub Release](https://img.shields.io/github/v/release/harivansh-afk/agentikube)](https://github.com/harivansh-afk/agentikube/releases)
-[![GitHub Downloads (All Assets)](https://img.shields.io/github/downloads/harivansh-afk/agentikube/total)](https://github.com/harivansh-afk/agentikube/releases)
-[![GitHub License](https://img.shields.io/github/license/harivansh-afk/agentikube)](https://github.com/harivansh-afk/agentikube)
 [![Go Version](https://img.shields.io/github/go-mod/go-version/harivansh-afk/agentikube)](https://github.com/harivansh-afk/agentikube/blob/main/go.mod)
 [![Code Size](https://img.shields.io/github/languages/code-size/harivansh-afk/agentikube)](https://github.com/harivansh-afk/agentikube)
-[![CI](https://github.com/harivansh-afk/agentikube/actions/workflows/ci.yml/badge.svg)](https://github.com/harivansh-afk/agentikube/actions/workflows/ci.yml)
 [![Release](https://github.com/harivansh-afk/agentikube/actions/workflows/release.yml/badge.svg)](https://github.com/harivansh-afk/agentikube/actions/workflows/release.yml)
 
 This repo is a small Go CLI for running isolated agent sandboxes on Kubernetes.
