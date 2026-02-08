@@ -3,9 +3,13 @@
 [![Go Version](https://img.shields.io/github/go-mod/go-version/harivansh-afk/agentikube)](https://github.com/harivansh-afk/agentikube/blob/main/go.mod)
 [![Release](https://img.shields.io/github/v/release/harivansh-afk/agentikube)](https://github.com/harivansh-afk/agentikube/releases/latest)
 
-A small Go CLI that spins up isolated agent sandboxes on Kubernetes. Built for AWS setups (EFS + optional Karpenter).
+A small Go CLI that spins up isolated agent sandboxes on Kubernetes.
 
 <img width="1023" height="745" alt="image" src="https://github.com/user-attachments/assets/d62b6d99-b6bf-4ac3-9fb3-9b8373afbbec" />
+
+## Context
+
+https://hari.tech/thoughts/isolated-long-running-agents-with-kubernetes
 
 ## What it does
 
