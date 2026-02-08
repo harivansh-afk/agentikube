@@ -1,0 +1,18 @@
+{{- if eq .Values.compute.type "karpenter" }}
+apiVersion: karpenter.k8s.aws/v1
+kind: EC2NodeClass
+metadata:
+  name: sandbox-nodes
+  labels:
+    {{- include "agentikube.labels" . | nindent 4 }}
+spec:
+  amiSelectorTerms:
+    - alias: "al2023@latest"
+  subnetSelectorTerms:
+    - tags:
+        karpenter.sh/discovery: {{ required "compute.clusterName is required for Karpenter" .Values.compute.clusterName | quote }}
+  securityGroupSelectorTerms:
+    - tags:
+        karpenter.sh/discovery: {{ .Values.compute.clusterName | quote }}
+  role: {{ printf "KarpenterNodeRole-%s" .Values.compute.clusterName | quote }}
+{{- end }}

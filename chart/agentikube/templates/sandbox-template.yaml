@@ -1,0 +1,57 @@
+apiVersion: extensions.agents.x-k8s.io/v1alpha1
+kind: SandboxTemplate
+metadata:
+  name: sandbox-template
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "agentikube.labels" . | nindent 4 }}
+spec:
+  template:
+    spec:
+      containers:
+        - name: sandbox
+          image: {{ required "sandbox.image is required" .Values.sandbox.image }}
+          ports:
+          {{- range .Values.sandbox.ports }}
+            - containerPort: {{ . }}
+          {{- end }}
+          resources:
+            requests:
+              cpu: {{ .Values.sandbox.resources.requests.cpu }}
+              memory: {{ .Values.sandbox.resources.requests.memory }}
+            limits:
+              cpu: {{ .Values.sandbox.resources.limits.cpu | quote }}
+              memory: {{ .Values.sandbox.resources.limits.memory }}
+          securityContext:
+            runAsUser: {{ .Values.sandbox.securityContext.runAsUser }}
+            runAsGroup: {{ .Values.sandbox.securityContext.runAsGroup }}
+            runAsNonRoot: {{ .Values.sandbox.securityContext.runAsNonRoot }}
+          {{- if .Values.sandbox.env }}
+          env:
+          {{- range $key, $value := .Values.sandbox.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+          {{- end }}
+          {{- end }}
+          startupProbe:
+            tcpSocket:
+              port: {{ .Values.sandbox.probes.port }}
+            failureThreshold: {{ .Values.sandbox.probes.startupFailureThreshold }}
+            periodSeconds: 10
+          readinessProbe:
+            tcpSocket:
+              port: {{ .Values.sandbox.probes.port }}
+            periodSeconds: 10
+          volumeMounts:
+            - name: workspace
+              mountPath: {{ .Values.sandbox.mountPath }}
+  volumeClaimTemplates:
+    - metadata:
+        name: workspace
+      spec:
+        accessModes:
+          - ReadWriteMany
+        storageClassName: efs-sandbox
+        resources:
+          requests:
+            storage: "10Gi"

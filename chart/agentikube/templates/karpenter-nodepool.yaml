@@ -1,0 +1,37 @@
+{{- if eq .Values.compute.type "karpenter" }}
+apiVersion: karpenter.sh/v1
+kind: NodePool
+metadata:
+  name: sandbox-pool
+  labels:
+    {{- include "agentikube.labels" . | nindent 4 }}
+spec:
+  template:
+    spec:
+      requirements:
+        - key: node.kubernetes.io/instance-type
+          operator: In
+          values:
+          {{- range .Values.compute.instanceTypes }}
+            - {{ . }}
+          {{- end }}
+        - key: karpenter.sh/capacity-type
+          operator: In
+          values:
+          {{- range .Values.compute.capacityTypes }}
+            - {{ . }}
+          {{- end }}
+        - key: kubernetes.io/arch
+          operator: In
+          values:
+            - amd64
+      nodeClassRef:
+        name: sandbox-nodes
+        group: karpenter.k8s.aws
+        kind: EC2NodeClass
+  limits:
+    cpu: {{ .Values.compute.maxCpu }}
+    memory: {{ .Values.compute.maxMemory }}
+  disruption:
+    consolidationPolicy: {{ if .Values.compute.consolidation }}WhenEmptyOrUnderutilized{{ else }}WhenEmpty{{ end }}
+{{- end }}

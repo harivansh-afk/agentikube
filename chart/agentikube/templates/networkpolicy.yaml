@@ -1,0 +1,28 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: sandbox-network-policy
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "agentikube.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: sandbox
+  policyTypes:
+    - Ingress
+    {{- if .Values.sandbox.networkPolicy.egressAllowAll }}
+    - Egress
+    {{- end }}
+  {{- if .Values.sandbox.networkPolicy.egressAllowAll }}
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+  {{- end }}
+  ingress:
+  {{- range .Values.sandbox.networkPolicy.ingressPorts }}
+    - ports:
+        - port: {{ . }}
+          protocol: TCP
+  {{- end }}

@@ -1,0 +1,16 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: efs-sandbox
+  labels:
+    {{- include "agentikube.labels" . | nindent 4 }}
+provisioner: efs.csi.aws.com
+parameters:
+  provisioningMode: efs-ap
+  fileSystemId: {{ required "storage.filesystemId is required" .Values.storage.filesystemId }}
+  directoryPerms: "755"
+  uid: {{ .Values.storage.uid | quote }}
+  gid: {{ .Values.storage.gid | quote }}
+  basePath: {{ .Values.storage.basePath }}
+reclaimPolicy: {{ .Values.storage.reclaimPolicy }}
+volumeBindingMode: Immediate

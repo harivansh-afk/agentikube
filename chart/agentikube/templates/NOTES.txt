@@ -1,0 +1,25 @@
+agentikube has been installed in namespace {{ .Release.Namespace }}.
+
+Resources created:
+  - StorageClass: efs-sandbox (EFS filesystem: {{ .Values.storage.filesystemId }})
+  - SandboxTemplate: sandbox-template
+{{- if .Values.sandbox.warmPool.enabled }}
+  - SandboxWarmPool: sandbox-warm-pool ({{ .Values.sandbox.warmPool.size }} replicas)
+{{- end }}
+{{- if eq .Values.compute.type "karpenter" }}
+  - NodePool: sandbox-pool
+  - EC2NodeClass: sandbox-nodes
+{{- end }}
+  - NetworkPolicy: sandbox-network-policy
+
+To create a sandbox:
+  agentikube create <handle> --provider <provider> --api-key <key>
+
+To list sandboxes:
+  agentikube list
+
+To SSH into a sandbox:
+  agentikube ssh <handle>
+
+To destroy a sandbox:
+  agentikube destroy <handle>

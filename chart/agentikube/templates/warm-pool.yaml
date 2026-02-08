@@ -1,0 +1,14 @@
+{{- if .Values.sandbox.warmPool.enabled }}
+apiVersion: extensions.agents.x-k8s.io/v1alpha1
+kind: SandboxWarmPool
+metadata:
+  name: sandbox-warm-pool
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "agentikube.labels" . | nindent 4 }}
+spec:
+  templateRef:
+    name: sandbox-template
+  replicas: {{ .Values.sandbox.warmPool.size }}
+  ttlMinutes: {{ .Values.sandbox.warmPool.ttlMinutes }}
+{{- end }}

@@ -1,0 +1,66 @@
+# Compute configuration for sandbox nodes
+compute:
+  # karpenter or fargate
+  type: karpenter
+  instanceTypes:
+    - m6i.xlarge
+    - m5.xlarge
+    - r6i.xlarge
+  capacityTypes:
+    - spot
+    - on-demand
+  maxCpu: 2000
+  maxMemory: 8000Gi
+  consolidation: true
+  # EKS cluster name - used for Karpenter subnet/SG/role discovery
+  clusterName: ""
+
+# Persistent storage configuration
+storage:
+  # efs is the only supported type
+  type: efs
+  # REQUIRED - your EFS filesystem ID
+  filesystemId: ""
+  basePath: /sandboxes
+  uid: 1000
+  gid: 1000
+  reclaimPolicy: Retain
+
+# Sandbox pod configuration
+sandbox:
+  # REQUIRED - container image for sandbox pods
+  image: ""
+  ports:
+    - 18789
+    - 2222
+    - 3000
+    - 5173
+    - 8080
+  mountPath: /home/node/.openclaw
+  resources:
+    requests:
+      cpu: 50m
+      memory: 512Mi
+    limits:
+      cpu: "2"
+      memory: 4Gi
+  env: {}
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 1000
+    runAsNonRoot: true
+  probes:
+    port: 18789
+    startupFailureThreshold: 30
+  warmPool:
+    enabled: true
+    size: 5
+    ttlMinutes: 120
+  networkPolicy:
+    egressAllowAll: true
+    ingressPorts:
+      - 18789
+      - 2222
+      - 3000
+      - 5173
+      - 8080
