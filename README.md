@@ -9,7 +9,7 @@ A small Go CLI that spins up isolated agent sandboxes on Kubernetes.
 
 ## Context
 
-https://hari.tech/thoughts/isolated-long-running-agents-with-kubernetes
+[![Blog Post: Isolated Long-Running Agents with Kubernetes](https://hari.tech/thoughts/isolated-long-running-agents-with-kubernetes/opengraph-image?5c0605812d5fdbb7)](https://hari.tech/thoughts/isolated-long-running-agents-with-kubernetes)
 
 ## What it does
 
