@@ -1,6 +1,7 @@
 # agentikube
 
 [![Go Version](https://img.shields.io/github/go-mod/go-version/harivansh-afk/agentikube)](https://github.com/harivansh-afk/agentikube/blob/main/go.mod)
+[![Helm Version](https://img.shields.io/badge/helm%20chart-0.1.0-blue)](https://github.com/harivansh-afk/agentikube/tree/main/chart/agentikube)
 [![Release](https://img.shields.io/github/v/release/harivansh-afk/agentikube)](https://github.com/harivansh-afk/agentikube/releases/latest)
 
 Isolated stateful agent sandboxes on Kubernetes
