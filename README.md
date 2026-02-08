@@ -7,10 +7,6 @@ A small Go CLI that spins up isolated agent sandboxes on Kubernetes.
 
 <img width="1023" height="745" alt="image" src="https://github.com/user-attachments/assets/d62b6d99-b6bf-4ac3-9fb3-9b8373afbbec" />
 
-## Context
-
-[![Blog Post: Isolated Long-Running Agents with Kubernetes](https://hari.tech/thoughts/isolated-long-running-agents-with-kubernetes/opengraph-image?5c0605812d5fdbb7)](https://hari.tech/thoughts/isolated-long-running-agents-with-kubernetes)
-
 ## What it does
 
 - **`init`** - Installs CRDs, checks prerequisites, ensures your namespace exists
@@ -82,3 +78,7 @@ go run ./cmd/agentikube --help
 - Fargate is validated in config but templates only cover the Karpenter path so far
 - No Go tests written yet - `go test` passes but reports no test files
 - [k9s](https://k9scli.io/) is great for browsing sandbox resources (`brew install derailed/k9s/k9s`)
+
+## Context
+
+[![Blog Post: Isolated Long-Running Agents with Kubernetes](https://hari.tech/thoughts/isolated-long-running-agents-with-kubernetes/opengraph-image?5c0605812d5fdbb7)](https://hari.tech/thoughts/isolated-long-running-agents-with-kubernetes)
