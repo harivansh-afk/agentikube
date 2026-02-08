@@ -3,7 +3,7 @@
 [![Go Version](https://img.shields.io/github/go-mod/go-version/harivansh-afk/agentikube)](https://github.com/harivansh-afk/agentikube/blob/main/go.mod)
 [![Release](https://img.shields.io/github/v/release/harivansh-afk/agentikube)](https://github.com/harivansh-afk/agentikube/releases/latest)
 
-A small Go CLI that spins up isolated agent sandboxes on Kubernetes.
+A Helm package used for spinning up isolated stateful agent sandboxes via k8 pods
 
 <img width="1023" height="745" alt="image" src="https://github.com/user-attachments/assets/d62b6d99-b6bf-4ac3-9fb3-9b8373afbbec" />
 
@@ -19,6 +19,31 @@ A small Go CLI that spins up isolated agent sandboxes on Kubernetes.
 - **`down`** - Removes shared infra but keeps existing user sandboxes
 
 ## Quick start
+
+### Option A: Helm chart
+
+```bash
+# 1. Create your values file
+cat > my-values.yaml <<EOF
+compute:
+  clusterName: my-eks-cluster
+storage:
+  filesystemId: fs-0123456789abcdef0
+sandbox:
+  image: my-registry/sandbox:latest
+EOF
+
+# 2. Install
+helm install agentikube ./chart/agentikube \
+  -n sandboxes --create-namespace \
+  -f my-values.yaml
+
+# 3. Create a sandbox and jump in
+agentikube create demo --provider openai --api-key <key>
+agentikube ssh demo
+```
+
+### Option B: CLI only
 
 ```bash
 # 1. Copy and fill in your config
@@ -53,11 +78,13 @@ Running `create <handle>` adds:
 cmd/agentikube/main.go         # entrypoint
 internal/config/               # config structs + validation
 internal/manifest/             # template rendering
-internal/manifest/templates/   # k8s YAML templates
+internal/manifest/templates/   # k8s YAML templates (used by CLI)
 internal/kube/                 # kube client helpers
 internal/commands/             # command implementations
+chart/agentikube/              # Helm chart
+scripts/                       # helper scripts (CRD download)
 agentikube.example.yaml        # example config
-Makefile                       # build/install/fmt/vet
+Makefile                       # build/install/fmt/vet/helm
 ```
 
 ## Build and test locally
