@@ -3,108 +3,81 @@
 [![Go Version](https://img.shields.io/github/go-mod/go-version/harivansh-afk/agentikube)](https://github.com/harivansh-afk/agentikube/blob/main/go.mod)
 [![Release](https://img.shields.io/github/v/release/harivansh-afk/agentikube)](https://github.com/harivansh-afk/agentikube/releases/latest)
 
-A Helm package used for spinning up isolated stateful agent sandboxes via k8 pods
+Isolated stateful agent sandboxes on Kubernetes
 
 <img width="1023" height="745" alt="image" src="https://github.com/user-attachments/assets/d62b6d99-b6bf-4ac3-9fb3-9b8373afbbec" />
 
-## What it does
-
-- **`init`** - Installs CRDs, checks prerequisites, ensures your namespace exists
-- **`up`** - Renders and applies Kubernetes manifests from templates (`--dry-run` to preview)
-- **`create <handle>`** - Spins up a sandbox for a user with provider credentials
-- **`list`** - Shows all sandboxes with status, age, and pod name
-- **`status`** - Warm pool numbers, sandbox count, Karpenter node count
-- **`ssh <handle>`** - Drops you into a sandbox pod shell
-- **`destroy <handle>`** - Tears down a single sandbox
-- **`down`** - Removes shared infra but keeps existing user sandboxes
-
-## Quick start
-
-### Option A: Helm chart
+## Install
 
 ```bash
-# 1. Create your values file
-cat > my-values.yaml <<EOF
+helm install agentikube oci://ghcr.io/harivansh-afk/agentikube \
+  -n sandboxes --create-namespace \
+  -f my-values.yaml
+```
+
+Create a `my-values.yaml` with your cluster details:
+
+```yaml
 compute:
   clusterName: my-eks-cluster
 storage:
   filesystemId: fs-0123456789abcdef0
 sandbox:
   image: my-registry/sandbox:latest
-EOF
-
-# 2. Install
-helm install agentikube ./chart/agentikube \
-  -n sandboxes --create-namespace \
-  -f my-values.yaml
-
-# 3. Create a sandbox and jump in
-agentikube create demo --provider openai --api-key <key>
-agentikube ssh demo
 ```
 
-### Option B: CLI only
+See [`values.yaml`](chart/agentikube/values.yaml) for all options.
+
+## CLI
+
+The Go CLI handles runtime operations that are inherently imperative:
 
 ```bash
-# 1. Copy and fill in your config
-cp agentikube.example.yaml agentikube.yaml
-# Edit: namespace, EFS filesystem ID, sandbox image, compute settings
-
-# 2. Set things up
-agentikube init
-agentikube up
-
-# 3. Create a sandbox and jump in
 agentikube create demo --provider openai --api-key <key>
 agentikube list
 agentikube ssh demo
+agentikube status
+agentikube destroy demo
 ```
+
+Build it with `go build ./cmd/agentikube` or `make build`.
 
 ## What gets created
 
-Running `up` applies these to your cluster:
+The Helm chart installs:
 
-- Namespace, StorageClass (`efs-sandbox`), SandboxTemplate
-- Optionally: SandboxWarmPool, NodePool + EC2NodeClass (Karpenter)
+- StorageClass (`efs-sandbox`) backed by your EFS filesystem
+- SandboxTemplate defining the pod spec
+- NetworkPolicy for ingress/egress rules
+- SandboxWarmPool (optional, enabled by default)
+- Karpenter NodePool + EC2NodeClass (optional, when `compute.type: karpenter`)
 
-Running `create <handle>` adds:
-
-- A Secret and SandboxClaim per user
-- A workspace PVC backed by EFS
+Each `agentikube create <handle>` then adds a Secret, SandboxClaim, and workspace PVC for that user.
 
 ## Project layout
 
 ```
-cmd/agentikube/main.go         # entrypoint
-internal/config/               # config structs + validation
-internal/manifest/             # template rendering
-internal/manifest/templates/   # k8s YAML templates (used by CLI)
-internal/kube/                 # kube client helpers
-internal/commands/             # command implementations
-chart/agentikube/              # Helm chart
-scripts/                       # helper scripts (CRD download)
-agentikube.example.yaml        # example config
-Makefile                       # build/install/fmt/vet/helm
+cmd/agentikube/              CLI entrypoint
+internal/                    config, manifest rendering, kube helpers
+chart/agentikube/            Helm chart
+scripts/                     CRD download helper
 ```
 
-## Build and test locally
+## Development
 
 ```bash
-go build ./...
-go test ./...
-go run ./cmd/agentikube --help
-
-# Smoke test manifest generation
-./agentikube up --dry-run --config agentikube.example.yaml
+make build                   # compile CLI
+make helm-lint               # lint the chart
+make helm-template           # dry-run render
+go test ./...                # run tests
 ```
 
 ## Good to know
 
-- `storage.type` is `efs` only for now
-- `kubectl` needs to be installed (used by `init` and `ssh`)
-- Fargate is validated in config but templates only cover the Karpenter path so far
-- No Go tests written yet - `go test` passes but reports no test files
-- [k9s](https://k9scli.io/) is great for browsing sandbox resources (`brew install derailed/k9s/k9s`)
+- Storage is EFS-only for now
+- `kubectl` must be installed (used by `init` and `ssh`)
+- Fargate is validated in config but templates only cover Karpenter so far
+- [k9s](https://k9scli.io/) is great for browsing sandbox resources
 
 ## Context
 
