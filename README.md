@@ -82,4 +82,4 @@ go test ./...                # run tests
 
 ## Context
 
-[![Blog Post: Isolated Long-Running Agents with Kubernetes](https://hari.tech/thoughts/isolated-long-running-agents-with-kubernetes/opengraph-image?5c0605812d5fdbb7)](https://hari.tech/thoughts/isolated-long-running-agents-with-kubernetes)
+(https://harivan.sh/thoughts/isolated-long-running-agents-with-kubernetes)
