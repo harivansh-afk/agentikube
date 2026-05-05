@@ -90,13 +90,38 @@ jobs:
           GOOS=darwin GOARCH=arm64 go build -ldflags "-X main.version=${version}" -o "dist/agentikube_${version}_darwin_arm64" ./cmd/agentikube
           GOOS=windows GOARCH=amd64 go build -ldflags "-X main.version=${version}" -o "dist/agentikube_${version}_windows_amd64.exe" ./cmd/agentikube
 
-      - name: Create GitHub release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ steps.version.outputs.next_tag }}
-          name: ${{ steps.version.outputs.next_tag }}
-          generate_release_notes: true
-          files: dist/*
+      - name: Create Forgejo release
+        env:
+          FORGEJO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          FORGEJO_API: ${{ github.server_url }}/api/v1
+          REPO: ${{ github.repository }}
+          TAG: ${{ steps.version.outputs.next_tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          release_json="$(mktemp)"
+          status="$(
+            curl -sS -o "$release_json" -w '%{http_code}' \
+              -H "Authorization: token $FORGEJO_TOKEN" \
+              -H "Content-Type: application/json" \
+              -X POST "$FORGEJO_API/repos/$REPO/releases" \
+              -d "{\"tag_name\":\"$TAG\",\"target_commitish\":\"main\",\"name\":\"$TAG\",\"body\":\"Release $TAG\",\"draft\":false,\"prerelease\":false}"
+          )"
+          if [ "$status" = "409" ]; then
+            curl -fsS -H "Authorization: token $FORGEJO_TOKEN" \
+              "$FORGEJO_API/repos/$REPO/releases/tags/$TAG" -o "$release_json"
+          elif [ "$status" != "201" ]; then
+            cat "$release_json"
+            exit 1
+          fi
+          release_id="$(jq -r .id "$release_json")"
+          for file in dist/*; do
+            name="$(basename "$file")"
+            curl -fsS -H "Authorization: token $FORGEJO_TOKEN" \
+              -X POST \
+              -F "attachment=@$file" \
+              "$FORGEJO_API/repos/$REPO/releases/$release_id/assets?name=$name" >/dev/null
+          done
 
       - name: Set chart version
         run: |
