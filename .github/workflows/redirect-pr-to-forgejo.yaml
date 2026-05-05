@@ -10,6 +10,7 @@ permissions:
 
 jobs:
   redirect:
+    if: github.server_url == 'https://github.com'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/github-script@v7
